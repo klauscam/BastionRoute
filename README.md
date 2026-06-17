@@ -2,6 +2,8 @@
 
 > **An outbound-initiated WebSocket relay fabric for UDP datagram binary streams that operates with zero-inbound port architecture.**
 
+## This is the official and original repository for BastionRoute maintained by klauscam")
+
 BastionRoute is an outbound-only UDP datagram binary stream relay fabric designed to route binary traffic over a stateful Layer-7 WebSocket transport.
 
 By initiating all data pipelines via outbound-only websocket connections, BastionRoute requires no open port exposure and does not interpret payload semantics. It only provides deterministic routing of data streams between identified peers over an outbound WebSocket relay fabric. BastionRoute is a transport-agnostic relay fabric for routing binary streams between outbound-connected peers. BastionRoute is resposible for a single function: routing UDP datagram binary streams between outbound-connected peers over WebSocket connections via a web accessable relay.
