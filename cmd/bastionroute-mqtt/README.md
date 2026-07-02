@@ -64,20 +64,3 @@ BastionRoute fixes this behavior through its user-space queue design:
 1. Data ingested from the kernel interface is dropped into buffered Go channels (`chan []byte`) acting as a non-blocking ring buffer.
 2. If the MQTT publisher pipeline detects a bottleneck or high broker latency, the engine deliberately drops old packets from the buffer instead of blocking the execution routine.
 3. By introducing intentional packet loss during network degradation, the shim allows the underlying WireGuard client to naturally drop its window limits and activate its native error correction routines. This prevents system freezes and preserves operational throughput.
-
----
-
-## 4. Empirical Performance Analysis
-
-Real-world test cycles executed on active 5G mobile cellular equipment running over multi-tenant public HiveMQ broker clusters yield the following performance benchmarks:
-
-* **Sustained UDP Data Throughput:** **11 Mbps**
-* **Sustained TCP Test Sequences (iperf3):** **2 Mbps**
-* **Application-Layer HTTP File Downloads:** **700 kB/s**
-
-### Performance Analysis
-The significant performance margin between pure UDP data streams (11 Mbps) and sequential TCP operations (2 Mbps) is an expected limitation imposed by network physics. 
-
-Because UDP does not wait for tracking acknowledgments, the Go shim can flush packets through the pub/sub architecture at maximum speed. TCP payloads, however, must wait for round-trip acknowledgment confirmation packets (ACK). Microsecond latency fluctuations introduced by public broker queues cause nested windowing collisions, throttling TCP throughput down to 700 kB/s. 
-
-Despite this protocol nesting overhead, the engine maintains low memory footprints and minimal CPU allocations, making it highly effective for real-time video monitoring, SSH sessions, and orchestration management over embedded execution platforms.
