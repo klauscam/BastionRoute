@@ -21,6 +21,9 @@ build:
 	
 	@echo "Compiling BastionRoute Relay..."
 	go build -o $(BIN_DIR)/bastionroute-relay ./cmd/bastionroute-relay
+
+    @echo "Compiling BastionRoute MQTT..."
+	go build -o $(BIN_DIR)/bastionroute-mqtt ./cmd/bastionroute-mqtt
 	
 	@echo "✅ Build complete! Binaries are located in the './$(BIN_DIR)' directory."
 
