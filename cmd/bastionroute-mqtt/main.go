@@ -43,7 +43,7 @@ type PeerTracker struct {
 }
 
 // ============================================================================
-// CRYPTOGRAPHIC HELPER MATRIX
+// 
 // ============================================================================
 
 func RandomClientID(prefix string) string {
@@ -126,7 +126,7 @@ func DecryptGCM(cipherText []byte, secret []byte) ([]byte, error) {
 }
 
 // ============================================================================
-// HIERARCHICAL SERVER MANAGEMENT ENGINE
+//
 // ============================================================================
 
 func runServerPeerPipeline(ctx context.Context, tracker *PeerTracker, brokerURL, room, peerID string, secret []byte, wgAddr string) {
@@ -377,7 +377,7 @@ func runServerControlPlane(ctx context.Context, brokerURL, room string, secret [
 }
 
 // ============================================================================
-// SECURE ENDPOINT CLIENT INFRASTRUCTURE
+// 
 // ============================================================================
 
 func runClientPipeline(ctx context.Context, brokerURL, room, peerID string, secret []byte, listenAddr string) {
@@ -543,7 +543,7 @@ func runClientPipeline(ctx context.Context, brokerURL, room, peerID string, secr
 }
 
 // ============================================================================
-// BOOTSTRAP MAIN ENTRY
+// 
 // ============================================================================
 
 func main() {
@@ -551,7 +551,7 @@ func main() {
         room := flag.String("room", "default-room", "Shared control room context space identifier")
         secret := flag.String("secret", "", "Shared master secret hex token (Required for client role)")
         addr := flag.String("addr", "127.0.0.1:51820", "Target system network local wire layout link address socket mapping")
-        broker := flag.String("broker", "ssl://broker.hivemq.com:8883", "MQTT cluster cloud URI link (Prefer TLS endpoint port)")
+        broker := flag.String("broker", "ssl://broker.example.com:8883", "MQTT cluster cloud URI link (Prefer TLS endpoint port)")
         flag.Parse()
 
         ctx, cancel := context.WithCancel(context.Background())
