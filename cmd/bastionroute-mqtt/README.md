@@ -64,3 +64,9 @@ BastionRoute fixes this behavior through its user-space queue design:
 1. Data ingested from the kernel interface is dropped into buffered Go channels (`chan []byte`) acting as a non-blocking ring buffer.
 2. If the MQTT publisher pipeline detects a bottleneck or high broker latency, the engine deliberately drops old packets from the buffer instead of blocking the execution routine.
 3. By introducing intentional packet loss during network degradation, the shim allows the underlying WireGuard client to naturally drop its window limits and activate its native error correction routines. This prevents system freezes and preserves operational throughput.
+
+---
+
+## 4. Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
