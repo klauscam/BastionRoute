@@ -4,21 +4,32 @@
 
 ## This is the official and original repository for BastionRoute maintained by klauscam
 
-BastionRoute is an outbound-only UDP datagram binary stream relay fabric designed to route binary traffic over a stateful Layer-7 WebSocket transport.
+BastionRoute is a stateless, outbound-only UDP datagram binary stream relay fabric designed to route binary traffic over a stateful Layer-7 WebSocket transport.
 
-By initiating all data pipelines via outbound-only websocket connections, BastionRoute requires no open port exposure and does not interpret payload semantics. It only provides deterministic routing of data streams between identified peers over an outbound WebSocket relay fabric. BastionRoute is a transport-agnostic relay fabric for routing binary streams between outbound-connected peers. BastionRoute is resposible for a single function: routing UDP datagram binary streams between outbound-connected peers over WebSocket connections via a web accessable relay.
+By initiating all data pipelines via outbound-only connections, BastionRoute eliminates the concept of an internet-facing listening socket at your network edge. It provides deterministic routing of raw data streams between identified peers over an outbound WebSocket relay fabric, acting as a payload-agnostic transport layer.
 
 ---
 
-## ⚡ Architectural Core
+## Core Intent & Design Philosophy
 
-BastionRoute leverages a decoupled, multi-shim architecture that separates the data plane from the control plane to preserve payload as-is.
+What is BastionRoute for?
 
-* **Zero-Inbound Footprint:** The target server establishes a persistent, outbound-initiated WebSocket control link to a Relay. It does not require inbound ports under normal deployment configurations.
-* **Double-Wrapper Encapsulation:** The binary payload is transparently ingested by the shim, packed into Layer-7 WebSockets frames (the use of TLS via nginx or other reverse proxies is highly recommended). The payload is never altered. 
-* **Relay Brokerage:** The relay functions as a payload-agnostic relay broker and does not interpret application payload semantics. It routes traffic using room and peer identifiers established during connection setup and maintained in transient memory structures. The payload contents injested in the architecture, remain unaltered throughout its lifecycle.
+BastionRoute is a specialized, stateless transport utility built to complement a strict zero-inbound listening port policy on your edge firewall while maintaining real-time remote access to private network resources (like native WireGuard).
 
-BastionRoute intentionally does not define encryption, authentication, authorization, payload schemas, or application semantics. These responsibilities remain with the applications utilizing the relay fabric.
+It acts as low-level digital plumbing designed to plug seamlessly behind existing public web infrastructure (like Cloudflare Proxy, Nginx, Caddy, or Traefik). This lets you bridge network segments over untrusted public space without exposing your private infrastructure to the internet.
+
+---
+
+## Architectural Pillars
+
+BastionRoute leverages a decoupled, multi-shim architecture that completely separates the data plane from the control plane to preserve payloads as-is.
+
+   Attack Surface Reduction (Zero-Inbound): Traditional topologies require an edge gateway to "listen" on a public port. BastionRoute reverses this logic. Both your isolated Server Shim and remote Client Shim initiate standard outbound-only Layer-7 connections to an external, transient Relay Broker. Because your gateway firewall maintains zero listening ports, your network edge remains dark to internet scans.
+
+  Deterministic "UDP Physics" Over TCP: Wrapping real-time UDP streams inside stateful TCP tunnels traditionally causes Head-of-Line blocking ("TCP Meltdown"). When a packet drops, standard proxies stall the pipeline to force a retransmission, introducing devastating latency spikes that break VPN handshakes. BastionRoute’s concurrent data engine fixes this by leveraging non-blocking Go channel selectors to explicitly drop frames at the application layer during network congestion. By perfectly emulating real-world, lossy UDP physics rather than backing up an internal queue, interactive streams stay completely fluid and lag-free.
+
+   Blind Transport Brokerage (Zero-Trust): BastionRoute is entirely payload-agnostic and does not interpret application payload semantics. The external Relay functions entirely in transient memory, terminates no internal VPN encryption, and requires no cryptographic keys. Security remains entirely end-to-end at the application layer (e.g., WireGuard).
+
 ---
 
 ## 📦 Deployment Mechanics
@@ -54,14 +65,14 @@ make clean
 ## 🚀 Execution Guide
 
 ### Running the Relay
-Deploy the relay binary on a web accessable server or localized DMZ boundary. This acts as a payload-agnostic relay broker that maintains transient routing state in memory:
+Deploy the relay binary on a web accessable server or localized DMZ boundary. This acts as a payload-agnostic relay broker that maintains transient routing state in memory. It is highly recommended to deploy this behind an edge reverse proxy (Nginx/Caddy) or Cloudflare Proxy:
 
 ```
 ./bin/bastionroute-relay --port=8080
 ```
 
 ### Running the Server-Side Control Plane
-Run the shim in server mode behind your private infrastructure to establish the outbound control link to the public relay broker:
+Run the shim in server mode behind your private infrastructure to establish the outbound control link to the public relay broker, pointing it to your local application (e.g., WireGuard listening locally on 51820):
 
 ```
 ./bastionroute-shim --wg-role=server --uri="wss://relay.yourdomain.com" --room="room-id" --wg-ip="127.0.0.1" --wg-port=51820
@@ -87,32 +98,24 @@ git clone https://github.com/klauscam/bastionroute.git
 cd bastionroute
 CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -o bastionroute-shim
 ```
-
-
 ---
 
 ## Example Applications
 
-BastionRoute is payload agnostic and can transport arbitrary UDP datagram binary streams between connected peers.
-
-Potential applications include:
+Because BastionRoute acts strictly as low-level digital plumbing, it can transport any arbitrary UDP datagram binary stream between connected peers without any modification to the relay or shim source code:
 
 * WireGuard VPN transport
 * Generic UDP stream transport
 * Binary message buses
-* RPC transports
 * Telemetry and sensor streams
 * Multiplayer game state synchronization
-* File transfer pipelines
-* Custom application protocols
-
-No relay or shim modifications are required.
+* Low-overhead file transfer pipelines
 
 ---
 
-## (Usage Example) WireGuard Network over BastionRoute
+## Layered Security Model (WireGuard Example Deployment)
 
----
+When deployed optimally behind production edge infrastructure, BastionRoute allows you to build a 3-Layer Defense-in-Depth perimeter over untrusted networks:
 
 ### Architectural Diagram
 
@@ -144,7 +147,7 @@ No relay or shim modifications are required.
 * Sustained throughput: ~45–65 Mbps
 * Stable under moderate packet loss conditions
 
->* Note: Results are workload and environment-dependent and are not guaranteed. iperf3 was used for benchmarking unless otherwise stated
+>* Note: Results are workload and environment-dependent and are not guaranteed. iperf3 was used for benchmarking unless otherwise stated.
 
 ---
 
@@ -166,28 +169,21 @@ sudo sysctl -w net.core.default_qdisc=fq
 sudo sysctl -w net.ipv4.tcp_congestion_control=bbr
 ```
 
-### Security Model (for WireGuard example)
+## Threat Considerations & Notices
 
-#### BastionRoute inherits security properties from WireGuard. Specifically:
+### Metadata Notice
 
-* Payload encryption is handled entirely by WireGuard
-* BastionRoute does not decrypt or inspect payload data
-* Relay nodes do not require access to cryptographic keys
+This system does not provide network anonymity guarantees. Traffic metadata such as frame timing, transmission volume, and peer connection relationships remain observable at the transport layer by upstream network entities.
 
-### Threat Considerations
+### Security Notice
 
-This system does not provide anonymity guarantees. Traffic metadata such as timing, volume, and connection relationships may still be observable at the transport layer.
+Authentication, authorization, stateful firewall rules, and encryption remain the sole responsibility of the underlying applications utilizing the fabric. BastionRoute should always be paired with structurally secure end-to-end protocols like WireGuard.
+
+### Experimental Status
+
+This software is currently alpha-quality and should be thoroughly audited and evaluated in isolated test environments before consideration for production deployment.
 
 ---
-
-## Security Notice
-
-BastionRoute provides transport relaying of UDP datagram binary streams over WebSocket using outbound initiated connections.
-Authentication, authorization, encryption, and access control remain the responsibility of the underlying data initiator configuration and deployment.
-
-## Experimental Status
-
-This software is currently alpha-quality software and should be evaluated thoroughly before production deployment.
 
 ## ⚠️ Legal & Usage Notice
 
