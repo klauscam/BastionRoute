@@ -185,6 +185,15 @@ This software is currently alpha-quality and should be thoroughly audited and ev
 
 ---
 
+## Official Distribution
+
+This is the official BastionRoute source repository.
+
+BastionRoute is distributed as source code only. The project does not distribute precompiled .exe, .dll, installers, or other binary packages.
+
+Any repository, website, or download claiming to provide an official BastionRoute executable is not affiliated with or endorsed by this project unless explicitly announced through this repository.
+
+
 ## ⚠️ Legal & Usage Notice
 
 BastionRoute is provided for legitimate network administration, research, and authorized deployment scenarios only.
